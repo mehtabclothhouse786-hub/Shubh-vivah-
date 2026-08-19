@@ -1,0 +1,6 @@
+{
+  "name": "Smart Vivah",
+  "description": "Comprehensive Indian Matrimonial Platform (Smart Vivah) with OTP verification, multi-step profile builder, all Hindu & Muslim castes/biradaris, Kundali Milan, 17-stage complete Vivah/Nikah process workflow, mutual expectations agreement, printable marriage certificates, biodata generator, family connect, real-time messaging, and admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
