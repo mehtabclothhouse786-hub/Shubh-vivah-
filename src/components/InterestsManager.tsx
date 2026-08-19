@@ -10,6 +10,7 @@ interface InterestsManagerProps {
   onAcceptInterest: (interestId: string) => void;
   onDeclineInterest: (interestId: string) => void;
   onStartChat: (targetProfileId: string) => void;
+  onOpenGreetingHelper?: (partner: UserProfile) => void;
   onOpenDetail: (profile: UserProfile) => void;
   language: 'hi' | 'en';
 }
@@ -21,6 +22,7 @@ export const InterestsManager: React.FC<InterestsManagerProps> = ({
   onAcceptInterest,
   onDeclineInterest,
   onStartChat,
+  onOpenGreetingHelper,
   onOpenDetail,
   language
 }) => {
@@ -288,7 +290,7 @@ export const InterestsManager: React.FC<InterestsManagerProps> = ({
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-[#F5F5F0] flex items-center justify-between gap-2">
+                    <div className="mt-4 pt-3 border-t border-[#F5F5F0] flex items-center justify-between gap-2 flex-wrap">
                       <button
                         onClick={() => onOpenDetail(partner)}
                         className="text-xs text-[#5A5A40] hover:text-[#4A453E] font-bold px-2 py-1"
@@ -296,13 +298,26 @@ export const InterestsManager: React.FC<InterestsManagerProps> = ({
                         {language === 'hi' ? 'बायोडाटा देखें' : 'View Biodata'}
                       </button>
 
-                      <button
-                        onClick={() => onStartChat(partner.id)}
-                        className="px-4 py-1.5 bg-[#D4A373] hover:bg-[#c49262] text-white rounded-full text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{language === 'hi' ? 'बातचीत शुरू करें' : 'Start Chat'}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {onOpenGreetingHelper && (
+                          <button
+                            onClick={() => onOpenGreetingHelper(partner)}
+                            className="px-3.5 py-1.5 bg-[#FAF9F6] hover:bg-[#F5F5F0] text-[#5A5A40] border border-[#D4A373] rounded-full text-xs font-bold shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
+                            title={language === 'hi' ? 'तैयार अभिवादन संदेश चुनें' : 'Suggest Greeting'}
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-[#D4A373]" />
+                            <span>{language === 'hi' ? 'अभिवादन भेजें' : 'Send Greeting'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => onStartChat(partner.id)}
+                          className="px-4 py-1.5 bg-[#D4A373] hover:bg-[#c49262] text-white rounded-full text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>{language === 'hi' ? 'चैट' : 'Chat'}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

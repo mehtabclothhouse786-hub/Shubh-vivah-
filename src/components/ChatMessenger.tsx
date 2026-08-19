@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
-import { Send, Phone, Video, Users, Sparkles, CheckCheck, Smile, Paperclip, HeartHandshake, ShieldCheck, ArrowLeft } from 'lucide-react';
+import {
+  Send,
+  Phone,
+  Video,
+  Users,
+  Sparkles,
+  CheckCheck,
+  Smile,
+  Paperclip,
+  HeartHandshake,
+  ShieldCheck,
+  ArrowLeft,
+  MessageSquareHeart,
+  ChevronDown,
+  ChevronUp,
+  Sparkle
+} from 'lucide-react';
 import { UserProfile, ChatMessage } from '../types';
+import { GREETING_TEMPLATES } from './GreetingNotificationHelper';
 
 interface ChatMessengerProps {
   currentUser: UserProfile;
@@ -29,6 +46,11 @@ export const ChatMessenger: React.FC<ChatMessengerProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [isCalling, setIsCalling] = useState<'audio' | 'video' | null>(null);
+  const [showGreetingHelper, setShowGreetingHelper] = useState<boolean>(messages.length <= 2);
+  const [activeGreetingTemplateId, setActiveGreetingTemplateId] = useState<string>('traditional_namaste');
+
+  const isMe = (senderId: string) => senderId === currentUser.id;
+  const partnerFirst = activePartner.fullName.split(' ')[0];
 
   const quickIcebreakers = [
     language === 'hi' ? 'नमस्ते! आपकी प्रोफ़ाइल और पारिवारिक मूल्य बहुत अच्छे लगे 🙏' : 'Namaste! Really liked your profile and family background 🙏',
@@ -46,6 +68,15 @@ export const ChatMessenger: React.FC<ChatMessengerProps> = ({
 
   const handleSendIcebreaker = (text: string) => {
     onSendMessage(text);
+  };
+
+  const handleInsertGreeting = (text: string) => {
+    setInputText(text);
+  };
+
+  const handleSendGreetingDirectly = (text: string) => {
+    onSendMessage(text);
+    setShowGreetingHelper(false);
   };
 
   return (
@@ -137,8 +168,24 @@ export const ChatMessenger: React.FC<ChatMessengerProps> = ({
             </div>
           </div>
 
-          {/* Action CTAs: Call / Video / Family Connect */}
+          {/* Action CTAs: Call / Video / Family Connect & Greeting Helper */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGreetingHelper(!showGreetingHelper)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                showGreetingHelper
+                  ? 'bg-[#D4A373] text-white border-[#D4A373] shadow-xs'
+                  : 'bg-[#FAF9F6] hover:bg-[#F5F5F0] text-[#5A5A40] border-[#E8E4DE]'
+              }`}
+              title={language === 'hi' ? 'अभिवादन सहायक सुझाव' : 'Automated Greeting Helper'}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {language === 'hi' ? 'अभिवादन सहायक' : 'Greeting Helper'}
+              </span>
+              {showGreetingHelper ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
             <button
               onClick={() => setIsCalling('audio')}
               className="p-2 text-[#8C8479] hover:text-[#5A5A40] hover:bg-[#FAF9F6] rounded-full transition-colors border border-[#E8E4DE]"
@@ -177,6 +224,83 @@ export const ChatMessenger: React.FC<ChatMessengerProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Automated Greeting Helper Expandable Tray */}
+        {showGreetingHelper && (
+          <div className="bg-[#FAF9F6] border-b border-[#E8E4DE] p-3.5 animate-in slide-in-from-top-2 duration-200">
+            <div className="bg-white rounded-2xl p-3 border border-[#E8E4DE] shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-[#5A5A40]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4A373]" />
+                  <span>
+                    {language === 'hi'
+                      ? 'स्वचालित अभिवादन सहायक (Automated Greeting Suggestions)'
+                      : 'Automated Matrimonial Greeting Suggestions'}
+                  </span>
+                </div>
+                <span className="text-[10px] bg-[#FAF9F6] text-[#8C8479] font-medium px-2 py-0.5 rounded-full border border-[#E8E4DE]">
+                  {language === 'hi' ? '1-क्लिक भेजें या एडिट करें' : '1-Click Send or Edit'}
+                </span>
+              </div>
+
+              {/* Template Category Selector Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {GREETING_TEMPLATES.map((tmpl) => {
+                  const isSelected = activeGreetingTemplateId === tmpl.id;
+                  return (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      onClick={() => setActiveGreetingTemplateId(tmpl.id)}
+                      className={`p-2 rounded-xl text-[11px] font-medium transition-all flex items-center gap-1.5 text-left border cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#5A5A40] text-white border-[#5A5A40] shadow-2xs'
+                          : 'bg-[#FAF9F6] text-[#4A453E] border-[#E8E4DE] hover:bg-white'
+                      }`}
+                    >
+                      <span className="text-sm">{tmpl.icon}</span>
+                      <span className="truncate">
+                        {language === 'hi' ? tmpl.titleHindi.split(' (')[0] : tmpl.titleEn}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Preview & Action Buttons */}
+              {(() => {
+                const currentTmpl =
+                  GREETING_TEMPLATES.find((t) => t.id === activeGreetingTemplateId) ||
+                  GREETING_TEMPLATES[0];
+                const text = currentTmpl.getMessage(currentUser, activePartner, language);
+                return (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 bg-[#FAF9F6] p-2.5 rounded-xl border border-[#E8E4DE]">
+                    <p className="text-xs text-[#4A453E] leading-relaxed flex-1 italic">
+                      "{text}"
+                    </p>
+                    <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleInsertGreeting(text)}
+                        className="px-3 py-1.5 bg-white hover:bg-gray-50 text-[#5A5A40] border border-[#E8E4DE] text-[11px] font-bold rounded-full transition-colors cursor-pointer"
+                      >
+                        {language === 'hi' ? 'बॉक्स में डालें (Use)' : 'Use in Input'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSendGreetingDirectly(text)}
+                        className="px-3.5 py-1.5 bg-[#5A5A40] hover:bg-[#4a4a35] text-white text-[11px] font-bold rounded-full shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <Send className="w-3 h-3 text-[#D4A373]" />
+                        <span>{language === 'hi' ? 'तुरंत भेजें (Send)' : 'Send Now'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Messages Body */}
         <div className="flex-1 p-5 overflow-y-auto space-y-3.5">

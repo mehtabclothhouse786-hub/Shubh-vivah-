@@ -640,6 +640,11 @@ export const ProfileBuilder: React.FC<ProfileBuilderProps> = ({
                 {formData.photos?.map((url, i) => (
                   <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#E8E4DE]">
                     <img src={url} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute bottom-0 inset-x-0 bg-[#D4A373] text-white text-[8px] text-center font-bold">
+                        {language === 'hi' ? 'मुख्य' : 'Cover'}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() =>
@@ -648,12 +653,50 @@ export const ProfileBuilder: React.FC<ProfileBuilderProps> = ({
                           photos: formData.photos?.filter((_, idx) => idx !== i)
                         })
                       }
-                      className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5"
+                      className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
+              </div>
+
+              {/* Curated Sample Portraits picker */}
+              <div className="mt-3 pt-3 border-t border-[#E8E4DE]">
+                <span className="text-[10px] text-[#8C8479] font-bold block mb-1.5">
+                  {language === 'hi' ? 'या त्वरित प्रमाणित नमूना पोर्ट्रेट चुनें:' : 'Or select verified sample portraits:'}
+                </span>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {(formData.gender === 'female'
+                    ? [
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80'
+                      ]
+                    : [
+                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80',
+                        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&auto=format&fit=crop&q=80'
+                      ]
+                  ).map((sUrl, sIdx) => (
+                    <img
+                      key={sIdx}
+                      src={sUrl}
+                      alt="Sample"
+                      onClick={() => {
+                        if (!formData.photos?.includes(sUrl)) {
+                          setFormData({
+                            ...formData,
+                            photos: [...(formData.photos || []), sUrl]
+                          });
+                        }
+                      }}
+                      className="w-12 h-14 rounded-lg object-cover border border-[#E8E4DE] hover:border-[#D4A373] cursor-pointer hover:scale-105 transition-all shrink-0"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

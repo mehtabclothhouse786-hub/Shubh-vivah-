@@ -219,7 +219,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] text-[11px] block">उच्चतम शिक्षा</span>
                   <strong className="text-[#5A5A40] text-sm font-serif">{profile.highestEducation}</strong>
-                  <div className="text-[#8C8479] mt-0.5">{profile.college}</div>
+                  <div className="text-[#8C8479] mt-0.5">{profile.collegeUniversity || (profile as any).college || 'विश्वविद्यालय'}</div>
                 </div>
 
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
@@ -231,7 +231,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] text-[11px] block">स्थान एवं गृह नगर</span>
                   <strong className="text-[#5A5A40] text-sm font-serif">{profile.city}, {profile.state}</strong>
-                  <div className="text-[#8C8479] mt-0.5">पिन: {profile.pincode}</div>
+                  <div className="text-[#8C8479] mt-0.5">{profile.country || 'भारत (India)'}</div>
                 </div>
 
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
@@ -248,13 +248,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] text-[11px] block">खान-पान एवं आदतें</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.lifestyle.diet}</strong>
-                  <div className="text-[#8C8479] mt-0.5">धूम्रपान: {profile.lifestyle.smoking}, मदिरा: {profile.lifestyle.drinking}</div>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.diet || 'शाकाहारी (Vegetarian)'}</strong>
+                  <div className="text-[#8C8479] mt-0.5">धूम्रपान: {profile.smoking || 'No'}, मदिरा: {profile.drinking || 'No'}</div>
                 </div>
 
                 <div className="p-4 bg-white rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] text-[11px] block">प्रोफ़ाइल निर्माता</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.profileCreatedBy} द्वारा</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.profileCreatedBy || 'Self'} द्वारा</strong>
                   <div className="text-[#8C8479] mt-0.5">सत्यापन: {profile.isVerified ? 'सत्यापित' : 'प्रतीक्षारत'}</div>
                 </div>
               </div>
@@ -352,19 +352,19 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">पिताजी का व्यवसाय</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family.fatherOccupation}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family?.fatherOccupation || 'सेवा / व्यवसाय'}</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">माताजी का व्यवसाय</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family.motherOccupation}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family?.motherOccupation || 'गृहणी / Homemaker'}</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">परिवार का प्रकार</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family.familyType}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family?.familyType || 'संयुक्त / Joint Family'}</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">पारिवारिक मूल्य</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family.familyValues}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.family?.familyValues || 'मध्यम वर्गीय / संस्कारी'}</strong>
                 </div>
               </div>
             </div>
@@ -380,19 +380,19 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">अपेक्षित आयु सीमा</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.preferences.minAge} - {profile.preferences.maxAge} वर्ष</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.preferences?.minAge || 21} - {profile.preferences?.maxAge || 35} वर्ष</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">न्यूनतम वार्षिक आय</span>
-                  <strong className="text-[#D4A373] text-sm font-bold">₹{profile.preferences.minIncomeLakhs} लाख/वर्ष</strong>
+                  <strong className="text-[#D4A373] text-sm font-bold">₹{profile.preferences?.minIncomeLakhs || 5} लाख/वर्ष</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">मांगलिक वरीयता</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.preferences.manglikPreference}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.preferences?.manglikPreference || 'Does Not Matter'}</strong>
                 </div>
                 <div className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DE]">
                   <span className="text-[#8C8479] block text-[11px]">पसंदीदा शहर</span>
-                  <strong className="text-[#5A5A40] text-sm font-serif">{profile.preferences.locations.join(', ')}</strong>
+                  <strong className="text-[#5A5A40] text-sm font-serif">{(profile.preferences?.locations || ['Any']).join(', ')}</strong>
                 </div>
               </div>
             </div>

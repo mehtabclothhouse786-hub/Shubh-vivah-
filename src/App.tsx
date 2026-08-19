@@ -18,7 +18,10 @@ import {
   Lock,
   ArrowRight,
   Bookmark,
-  Calendar
+  Calendar,
+  Camera,
+  Crop,
+  Plus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -27,7 +30,11 @@ import {
   InterestRequest,
   ChatMessage,
   AdminReport,
-  PartnerPreferences
+  PartnerPreferences,
+  MarriagePackage,
+  ServiceChargeConfig,
+  PaymentTransaction,
+  MarriageCommissionRecord
 } from './types';
 import {
   INITIAL_PROFILES,
@@ -35,6 +42,12 @@ import {
   INITIAL_CHATS,
   INITIAL_REPORTS
 } from './data/mockProfiles';
+import {
+  INITIAL_PACKAGES,
+  INITIAL_SERVICE_CHARGE_CONFIG,
+  INITIAL_TRANSACTIONS,
+  INITIAL_COMMISSION_RECORDS
+} from './data/packageData';
 import { HINDU_CASTES, MUSLIM_CASTES } from './data/castes';
 import { calculateKundaliMilan } from './utils/kundali';
 import { generateMarriageBiodataHTML } from './utils/biodataGenerator';
@@ -56,6 +69,9 @@ import { PartnerPreferencesModal } from './components/PartnerPreferencesModal';
 import { BiodataPreviewModal } from './components/BiodataPreviewModal';
 import { AdminAuthModal } from './components/AdminAuthModal';
 import { MarriageWorkflowModal } from './components/MarriageWorkflowModal';
+import { PackagesModal } from './components/PackagesModal';
+import { GreetingNotificationHelper } from './components/GreetingNotificationHelper';
+import { PhotoAlbumManager } from './components/PhotoAlbumManager';
 
 export default function App() {
   // State Management
@@ -102,6 +118,16 @@ export default function App() {
   const [successStoryPartner, setSuccessStoryPartner] = useState<string | null>(null);
   const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState<boolean>(false);
   const [selectedWorkflowPartner, setSelectedWorkflowPartner] = useState<UserProfile | null>(null);
+  const [isPackagesModalOpen, setIsPackagesModalOpen] = useState<boolean>(false);
+  const [greetingHelperPartner, setGreetingHelperPartner] = useState<UserProfile | null>(null);
+  const [isGreetingHelperOpen, setIsGreetingHelperOpen] = useState<boolean>(false);
+  const [isPhotoAlbumOpen, setIsPhotoAlbumOpen] = useState<boolean>(false);
+
+  // Marriage Packages (4 tiers: ₹20,000, ₹10,000, ₹5,000, ₹500) & Initial Service Charge (₹1,000)
+  const [packages, setPackages] = useState<MarriagePackage[]>(INITIAL_PACKAGES);
+  const [serviceChargeConfig, setServiceChargeConfig] = useState<ServiceChargeConfig>(INITIAL_SERVICE_CHARGE_CONFIG);
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>(INITIAL_TRANSACTIONS);
+  const [commissionRecords, setCommissionRecords] = useState<MarriageCommissionRecord[]>(INITIAL_COMMISSION_RECORDS);
 
   // Active Chat partner
   const [activeChatPartnerId, setActiveChatPartnerId] = useState<string>('user_bride_2');
@@ -205,10 +231,72 @@ export default function App() {
     setInterests((prev) =>
       prev.map((i) => (i.id === interestId ? { ...i, status: 'accepted', respondedAt: new Date().toISOString() } : i))
     );
+
+    if (sender) {
+      setGreetingHelperPartner(sender);
+      setIsGreetingHelperOpen(true);
+      confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+    }
+
     showToast(
       language === 'hi'
-        ? `🎉 ${sender?.fullName || 'मैच'} का रिश्ता स्वीकार किया गया! चैट अनलॉक हो गई है।`
-        : `🎉 Connected with ${sender?.fullName || 'match'}! Chat unlocked.`
+        ? `🎉 ${sender?.fullName || 'मैच'} का रिश्ता स्वीकार किया गया! पहला अभिवादन संदेश भेजें।`
+        : `🎉 Connected with ${sender?.fullName || 'match'}! Automated greeting suggested.`
+    );
+  };
+
+  const handleSendGreetingMessage = (partner: UserProfile, greetingText: string) => {
+    const newMsg: ChatMessage = {
+      id: `msg_${Date.now()}`,
+      matchId: `${currentUser.id}_${partner.id}`,
+      senderId: currentUser.id,
+      receiverId: partner.id,
+      text: greetingText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isRead: true
+    };
+
+    setChats((prev) => [...prev, newMsg]);
+    setActiveChatPartnerId(partner.id);
+    setActiveTab('chat');
+    confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+    showToast(
+      language === 'hi'
+        ? `✨ ${partner.fullName.split(' ')[0]} जी को अभिवादन संदेश भेजा गया एवं चैट खुल गई!`
+        : `✨ Greeting message sent to ${partner.fullName.split(' ')[0]}! Chat opened.`
+    );
+
+    setTimeout(() => {
+      const myFirst = currentUser.fullName.split(' ')[0];
+      const replyMsg: ChatMessage = {
+        id: `msg_reply_${Date.now()}`,
+        matchId: `${currentUser.id}_${partner.id}`,
+        senderId: partner.id,
+        receiverId: currentUser.id,
+        text:
+          language === 'hi'
+            ? `नमस्ते ${myFirst} जी! संदेश प्राप्त हुआ। आपसे जुड़कर बहुत अच्छा लगा। आइए परिवार सहित बातचीत आगे बढ़ाते हैं 🙏`
+            : `Hello ${myFirst}! Thanks for the warm greeting. Glad to connect and look forward to speaking with family 🙏`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      setChats((prev) => [...prev, replyMsg]);
+    }, 1400);
+  };
+
+  const handleOpenChatDirectly = (partner: UserProfile) => {
+    setActiveChatPartnerId(partner.id);
+    setActiveTab('chat');
+  };
+
+  const handleUpdateUserPhotos = (updatedPhotos: string[]) => {
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === currentUser.id ? { ...p, photos: updatedPhotos } : p))
+    );
+    showToast(
+      language === 'hi'
+        ? '📸 फ़ोटो एल्बम एवं मुख्य पोर्ट्रेट सफलतापूर्वक अपडेट हो गया!'
+        : '📸 Photo album and primary portrait updated successfully!'
     );
   };
 
@@ -365,12 +453,97 @@ export default function App() {
       })
     );
 
+    // Automatically generate Marriage Commission Record in Admin Panel
+    const userPkg = packages.find((pkg) => pkg.id === currentUser.subscribedPackageId) || packages[1]; // default Gold (₹10k) or Royal
+    const commissionAmt = userPkg.commissionOnMarriage;
+    const isGroom = currentUser.gender === 'male';
+    const newCommissionRec: MarriageCommissionRecord = {
+      id: `comm_${Date.now()}`,
+      groomId: isGroom ? currentUser.id : partnerId,
+      groomName: isGroom ? currentUser.fullName : partnerName,
+      brideId: isGroom ? partnerId : currentUser.id,
+      brideName: isGroom ? partnerName : currentUser.fullName,
+      packageTier: `${language === 'hi' ? userPkg.nameHindi : userPkg.name} (₹${userPkg.price.toLocaleString('en-IN')})`,
+      packagePrice: userPkg.price,
+      commissionAmount: commissionAmt,
+      serviceChargePaid: serviceChargeConfig.startServiceCharge,
+      status: 'pending',
+      weddingDate: todayStr,
+      receiptNumber: `REC-VIVAH-${Date.now().toString().slice(-5)}`,
+      paymentMode: 'UPI'
+    };
+    setCommissionRecords((prev) => [newCommissionRec, ...prev]);
+
     showToast(
       language === 'hi'
-        ? `🎉 शुभ विवाह/निकाह मुबारक! ${currentUser.fullName} एवं ${partnerName} का वैवाहिक पंजीकरण सफल रहा।`
-        : `🎉 Mubarak & Congratulations! Marriage registered between ${currentUser.fullName} & ${partnerName}.`
+        ? `🎉 शुभ विवाह/निकाह मुबारक! ${currentUser.fullName} एवं ${partnerName} का वैवाहिक पंजीकरण सफल रहा। (विवाह कमीशन रिकॉर्ड एडमिन लेजर में दर्ज)`
+        : `🎉 Mubarak & Congratulations! Marriage registered between ${currentUser.fullName} & ${partnerName}. Commission record logged.`
     );
     setSuccessStoryPartner(partnerName);
+  };
+
+  // Marriage Package Selection Handler
+  const handleSelectPackage = (pkg: MarriagePackage, paymentMethod: 'UPI' | 'NetBanking' | 'Card' | 'Cash / Office Desk') => {
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === currentUser.id ? { ...p, subscribedPackageId: pkg.id } : p))
+    );
+    const invoiceNo = `SV-PKG-${Date.now().toString().slice(-6)}`;
+    const newTx: PaymentTransaction = {
+      id: `tx_${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userMobile: currentUser.mobile,
+      type: 'marriage_package',
+      packageId: pkg.id,
+      packageName: language === 'hi' ? pkg.nameHindi : pkg.name,
+      amount: pkg.price,
+      paymentMethod: paymentMethod,
+      status: 'completed',
+      transactionDate: new Date().toISOString().split('T')[0],
+      invoiceNumber: invoiceNo,
+      notes: `${language === 'hi' ? pkg.nameHindi : pkg.name} (₹${pkg.price.toLocaleString('en-IN')}) पैकेज सब्सक्रिप्शन सक्रिय`
+    };
+    setTransactions((prev) => [newTx, ...prev]);
+    showToast(
+      language === 'hi'
+        ? `✅ ₹${pkg.price.toLocaleString('en-IN')} का ${pkg.nameHindi} सफलतापूर्वक सक्रिय हुआ!`
+        : `✅ Subscribed to ${pkg.name} (₹${pkg.price.toLocaleString('en-IN')}) successfully!`
+    );
+  };
+
+  // Initial Start Service Charge Payment Handler (₹1,000)
+  const handlePayServiceCharge = (amount: number, paymentMethod: 'UPI' | 'NetBanking' | 'Card' | 'Cash / Office Desk') => {
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === currentUser.id ? { ...p, hasPaidServiceCharge: true } : p))
+    );
+    const invoiceNo = `SV-SVC-${Date.now().toString().slice(-6)}`;
+    const newTx: PaymentTransaction = {
+      id: `tx_${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userMobile: currentUser.mobile,
+      type: 'start_service_charge',
+      amount: amount,
+      paymentMethod: paymentMethod,
+      status: 'completed',
+      transactionDate: new Date().toISOString().split('T')[0],
+      invoiceNumber: invoiceNo,
+      notes: 'प्रारंभिक सेवा शुल्क (Start Service Charges ₹1,000) सफलतापूर्वक जमा'
+    };
+    setTransactions((prev) => [newTx, ...prev]);
+    showToast(
+      language === 'hi'
+        ? `✅ ₹${amount.toLocaleString('en-IN')} का प्रारंभिक सेवा शुल्क जमा हुआ! 100% सत्यापन व मैचमेकिंग प्रारंभ।`
+        : `✅ Initial service charge of ₹${amount.toLocaleString('en-IN')} paid successfully!`
+    );
+  };
+
+  // Commission Record Update in Admin
+  const handleUpdateCommissionRecord = (recordId: string, updates: Partial<MarriageCommissionRecord>) => {
+    setCommissionRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, ...updates } : r))
+    );
+    showToast(language === 'hi' ? '✅ कमीशन भुगतान स्थिति अपडेट हो गई।' : '✅ Commission status updated successfully.');
   };
 
   // 11-step interactive navigation helper
@@ -461,6 +634,7 @@ export default function App() {
         }}
         onOpenAuthModal={() => setIsAuthOpen(true)}
         onOpenMarriageWorkflow={() => handleOpenMarriageWorkflow()}
+        onOpenPackagesModal={() => setIsPackagesModalOpen(true)}
         language={language}
         onToggleLanguage={() => setLanguage((prev) => (prev === 'hi' ? 'en' : 'hi'))}
       />
@@ -510,6 +684,13 @@ export default function App() {
             profiles={profiles}
             interests={interests}
             reports={reports}
+            packages={packages}
+            onUpdatePackages={setPackages}
+            serviceChargeConfig={serviceChargeConfig}
+            onUpdateServiceCharge={setServiceChargeConfig}
+            transactions={transactions}
+            commissionRecords={commissionRecords}
+            onUpdateCommissionRecord={handleUpdateCommissionRecord}
             onApproveProfile={handleAdminApprove}
             onRejectProfile={handleAdminReject}
             onToggleUserStatus={handleToggleUserStatus}
@@ -905,6 +1086,10 @@ export default function App() {
             onAcceptInterest={handleAcceptInterest}
             onDeclineInterest={handleDeclineInterest}
             onStartChat={handleStartChatFromInterest}
+            onOpenGreetingHelper={(partner) => {
+              setGreetingHelperPartner(partner);
+              setIsGreetingHelperOpen(true);
+            }}
             onOpenDetail={(p) => setSelectedProfileForDetail(p)}
             language={language}
           />
@@ -931,11 +1116,23 @@ export default function App() {
             {/* Natural Tones Header Banner */}
             <div className="bg-[#5A5A40] rounded-[32px] p-8 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border border-[#E8E4DE]">
               <div className="flex items-center gap-5">
-                <img
-                  src={currentUser.photos[0]}
-                  alt={currentUser.fullName}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white/90 shadow-md"
-                />
+                <div
+                  onClick={() => setIsPhotoAlbumOpen(true)}
+                  className="relative group cursor-pointer"
+                  title={language === 'hi' ? 'फोटो एल्बम व क्रॉप संपादक खोलें' : 'Open Photo Album & Cropper'}
+                >
+                  <img
+                    src={currentUser.photos[0]}
+                    alt={currentUser.fullName}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white/90 shadow-md group-hover:opacity-90 transition-opacity"
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-7 h-7 bg-[#D4A373] text-white rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    <Camera className="w-3.5 h-3.5" />
+                  </span>
+                </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-serif font-bold">{currentUser.fullName}</h1>
@@ -950,7 +1147,14 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => setIsPhotoAlbumOpen(true)}
+                  className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
+                >
+                  <Camera className="w-4 h-4 text-[#D4A373]" />
+                  <span>{language === 'hi' ? 'फोटो एल्बम (Photos)' : 'Manage Album'}</span>
+                </button>
                 <button
                   onClick={handlePrintMyBiodata}
                   className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-white/20"
@@ -964,6 +1168,70 @@ export default function App() {
                 >
                   {language === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile'}
                 </button>
+              </div>
+            </div>
+
+            {/* Photo Album Showcase Gallery Card */}
+            <div className="bg-white rounded-[32px] p-6 sm:p-8 border border-[#E8E4DE] shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif font-bold text-base text-[#5A5A40] flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#D4A373]" />
+                    <span>{language === 'hi' ? 'वैवाहिक फ़ोटो एल्बम (Photo Album)' : 'Matrimonial Photo Album'}</span>
+                  </h3>
+                  <p className="text-xs text-[#8C8479] mt-0.5">
+                    {language === 'hi'
+                      ? 'उच्च रिज़ॉल्यूशन एवं मानक पोर्ट्रेट (4:5) रिश्तों की स्वीकृति दर में ३ गुना वृद्धि करते हैं।'
+                      : 'High clarity 4:5 portraits increase match connection rates significantly.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsPhotoAlbumOpen(true)}
+                  className="px-4 py-2 bg-[#FAF9F6] hover:bg-[#F5F5F0] text-[#5A5A40] border border-[#D4A373] rounded-full text-xs font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Crop className="w-3.5 h-3.5 text-[#D4A373]" />
+                  <span>{language === 'hi' ? 'फ़ोटो प्रबंधित व क्रॉप करें' : 'Manage & Crop Photos'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                {currentUser.photos.map((photoUrl, pIdx) => (
+                  <div
+                    key={pIdx}
+                    onClick={() => setIsPhotoAlbumOpen(true)}
+                    className="group relative aspect-4/5 rounded-2xl overflow-hidden border border-[#E8E4DE] hover:border-[#D4A373] cursor-pointer shadow-2xs bg-[#FAF9F6] transition-all"
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Photo ${pIdx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {pIdx === 0 && (
+                      <span className="absolute top-2 left-2 bg-[#D4A373] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-current" />
+                        <span>{language === 'hi' ? 'मुख्य' : 'Cover'}</span>
+                      </span>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                      <Crop className="w-3.5 h-3.5" />
+                      <span>{language === 'hi' ? 'संपादित' : 'Edit'}</span>
+                    </div>
+                  </div>
+                ))}
+
+                {currentUser.photos.length < 6 && (
+                  <div
+                    onClick={() => setIsPhotoAlbumOpen(true)}
+                    className="aspect-4/5 rounded-2xl border-2 border-dashed border-[#D4A373]/60 hover:border-[#D4A373] hover:bg-[#FAF9F6] flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#FAF9F6] group-hover:bg-[#D4A373]/10 text-[#D4A373] flex items-center justify-center mb-1">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span className="text-[11px] font-serif font-bold text-[#5A5A40]">
+                      {language === 'hi' ? '+ फ़ोटो' : '+ Photo'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1148,7 +1416,19 @@ export default function App() {
         />
       )}
 
-      {/* 9. Admin Security Password Modal (Password: K@7m#2) */}
+      {/* 9. Marriage Packages & Service Charges Modal (₹20,000, ₹10,000, ₹5,000, ₹500 & Start Charge ₹1,000) */}
+      <PackagesModal
+        isOpen={isPackagesModalOpen}
+        onClose={() => setIsPackagesModalOpen(false)}
+        packages={packages}
+        serviceChargeConfig={serviceChargeConfig}
+        currentUser={currentUser}
+        onSelectPackage={handleSelectPackage}
+        onPayServiceCharge={handlePayServiceCharge}
+        language={language}
+      />
+
+      {/* 10. Admin Security Password Modal (Password: K@7m#2) */}
       <AdminAuthModal
         isOpen={isAdminAuthOpen}
         onClose={() => setIsAdminAuthOpen(false)}
@@ -1176,6 +1456,26 @@ export default function App() {
           language={language}
         />
       )}
+
+      {/* 11. Automated Greeting Notification Helper (triggers upon accepting interest) */}
+      <GreetingNotificationHelper
+        isOpen={isGreetingHelperOpen}
+        onClose={() => setIsGreetingHelperOpen(false)}
+        partner={greetingHelperPartner}
+        currentUser={currentUser}
+        onSendGreeting={handleSendGreetingMessage}
+        onOpenChatDirectly={handleOpenChatDirectly}
+        language={language}
+      />
+
+      {/* 12. Photo Album Manager & Matrimonial Portrait Standards Validator */}
+      <PhotoAlbumManager
+        isOpen={isPhotoAlbumOpen}
+        onClose={() => setIsPhotoAlbumOpen(false)}
+        currentUser={currentUser}
+        onUpdatePhotos={handleUpdateUserPhotos}
+        language={language}
+      />
 
       {/* Floating Toast Notification */}
       {toastMessage && (
